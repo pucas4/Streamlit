@@ -1,7 +1,6 @@
 import csv
 import hashlib
 import io
-import json
 from datetime import datetime, timezone
 
 import streamlit as st
@@ -9,11 +8,11 @@ import streamlit as st
 from src import storage, summarizer
 from src.substack_client import (
     SubstackAuthError,
-    cookies_to_header,
     extract_chat_messages,
     fetch_chat_raw,
     fetch_post_content,
     fetch_recent_posts,
+    parse_pasted_cookies,
 )
 
 st.set_page_config(page_title="Trader Joe Digest", page_icon="📈", layout="wide")
@@ -23,7 +22,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-REQUIRED_SECRETS = ["ANTHROPIC_API_KEY", "SUBSTACK_PUBLICATION_URL", "SUBSTACK_COOKIES_JSON"]
+REQUIRED_SECRETS = ["ANTHROPIC_API_KEY", "SUBSTACK_PUBLICATION_URL", "SUBSTACK_COOKIES"]
 
 
 def get_secret(key: str, default=None):
@@ -78,7 +77,7 @@ if missing:
 storage.init_db()
 client = summarizer.get_client(st.secrets["ANTHROPIC_API_KEY"])
 PUB_URL = st.secrets["SUBSTACK_PUBLICATION_URL"]
-COOKIE_HEADER = cookies_to_header(json.loads(st.secrets["SUBSTACK_COOKIES_JSON"]))
+COOKIE_HEADER = parse_pasted_cookies(st.secrets["SUBSTACK_COOKIES"])
 
 def stable_id(*parts: str) -> str:
     return hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()[:24]

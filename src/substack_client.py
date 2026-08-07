@@ -64,6 +64,24 @@ def cookies_to_header(cookies: list[dict[str, Any]]) -> str:
     return "; ".join(parts)
 
 
+def parse_pasted_cookies(text: str) -> str:
+    """
+    Build a Cookie header from cookie lines copied straight out of a browser cookie-editor
+    extension, one per line, in the raw `name=value;Domain=...;Path=...;Expires=...` form
+    those tools tend to produce (as opposed to hand-built JSON). Also tolerates plain
+    `name=value` lines and blank lines between entries.
+    """
+    parts = []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        name_value = line.split(";", 1)[0].strip()
+        if "=" in name_value:
+            parts.append(name_value)
+    return "; ".join(parts)
+
+
 def fetch_recent_posts(pub_url: str, limit: int = 10) -> list[PostMeta]:
     """List recent post metadata. Works without auth -- titles/slugs are public even for paid posts."""
     subdomain = _subdomain(pub_url)

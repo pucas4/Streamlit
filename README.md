@@ -35,13 +35,20 @@ Substack doesn't offer an official way to fetch your paid content programmatical
 so this app authenticates the same way your browser does: with your session cookie.
 
 1. Log into Substack in a desktop browser, on the publication you're subscribed to.
-2. Install a cookie-export extension, e.g. **"Cookie-Editor"** (available for Chrome/Firefox/Edge).
-3. On the substack.com tab, open Cookie-Editor and click **Export → Export as JSON**.
-4. Copy that JSON array. It'll look like:
-   ```json
-   [{"name": "substack.sid", "value": "abc123...", "domain": ".substack.com", ...}, ...]
+2. Install the **Cookie Editor** extension (by Hot Cleaner; Chrome/Firefox/Edge).
+3. With the Substack tab active, open the extension. It lists all cookies for
+   substack.com. Expand `substack.sid` and `substack.lli` one at a time (click the
+   arrow next to each) and use each one's **Copy** button — that copies a line like:
    ```
-5. Paste the whole array as the `SUBSTACK_COOKIES_JSON` secret (see step 3 below).
+   substack.sid=abc123...;Domain=substack.com;Path=/;Expires=...;SameSite=None;Secure
+   ```
+4. Paste both copied lines together, one per line, as the `SUBSTACK_COOKIES` secret
+   (see step 3 below) — you don't need to reformat them into JSON, just paste each
+   line as-is.
+
+These are session tokens for your account — treat them like a password. Don't paste
+them anywhere except directly into Streamlit's Secrets panel or your local
+`secrets.toml`.
 
 Cookies expire — if the app starts saying paid content "came back nearly empty,"
 repeat this to get a fresh cookie.
@@ -71,8 +78,9 @@ Copy `.streamlit/secrets.toml.example` to `.streamlit/secrets.toml` and fill in:
 ```toml
 ANTHROPIC_API_KEY = "sk-ant-..."
 SUBSTACK_PUBLICATION_URL = "https://example.substack.com"
-SUBSTACK_COOKIES_JSON = '''
-[{"name": "substack.sid", "value": "...", "domain": ".substack.com"}]
+SUBSTACK_COOKIES = '''
+substack.sid=...;Domain=substack.com;Path=/;Expires=...;SameSite=None;Secure
+substack.lli=...;Domain=substack.com;Path=/;Expires=...;SameSite=None;Secure
 '''
 SUBSTACK_CHAT_ENDPOINT = ""   # optional, see step 2
 APP_ACCESS_PASSWORD = "pick-something"
