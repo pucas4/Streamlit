@@ -46,6 +46,16 @@ def get_client(api_key: str) -> anthropic.Anthropic:
     return anthropic.Anthropic(api_key=api_key)
 
 
+def _extract_text(response) -> str:
+    """Claude responses can include a ThinkingBlock before the actual TextBlock --
+    content[0] isn't reliably the text, so scan for the first block that has one."""
+    for block in response.content:
+        text = getattr(block, "text", None)
+        if text:
+            return text.strip()
+    raise ValueError("Claude response had no text content")
+
+
 def summarize_post(client: anthropic.Anthropic, title: str, subtitle: str, text: str) -> str:
     text = text[:20000]  # keep prompts bounded; posts are rarely longer than this
     user_content = f"Title: {title}\nSubtitle: {subtitle}\n\nFull post text:\n{text}"
@@ -55,7 +65,7 @@ def summarize_post(client: anthropic.Anthropic, title: str, subtitle: str, text:
         system=_POST_SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_content}],
     )
-    return response.content[0].text.strip()
+    return _extract_text(response)
 
 
 def analyze_chat_batch(client: anthropic.Anthropic, messages: list[dict]) -> list[dict]:
@@ -77,7 +87,7 @@ def analyze_chat_batch(client: anthropic.Anthropic, messages: list[dict]) -> lis
             system=_CHAT_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": numbered}],
         )
-        raw = response.content[0].text.strip()
+        raw = _extract_text(response)
         try:
             parsed = json.loads(raw)
             if len(parsed) != len(chunk):
