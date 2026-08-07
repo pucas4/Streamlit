@@ -62,6 +62,7 @@ def summarize_post(client: anthropic.Anthropic, title: str, subtitle: str, text:
     response = client.messages.create(
         model=POST_MODEL,
         max_tokens=800,
+        thinking={"type": "disabled"},
         system=_POST_SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_content}],
     )
@@ -84,6 +85,7 @@ def analyze_chat_batch(client: anthropic.Anthropic, messages: list[dict]) -> lis
         response = client.messages.create(
             model=CHAT_MODEL,
             max_tokens=200 * len(chunk),
+            thinking={"type": "disabled"},
             system=_CHAT_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": numbered}],
         )
