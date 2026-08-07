@@ -107,6 +107,25 @@ def fetch_recent_posts(pub_url: str, limit: int = 10) -> list[PostMeta]:
     ]
 
 
+# Phrases Substack's paywall CTA inserts in place of gated content -- if any of these
+# show up, we did NOT get the full post, regardless of what the "audience" field says
+# (a post can be free-up-front-then-gated without being labeled "only_paid" overall).
+_PAYWALL_MARKERS = [
+    "keep reading with a",
+    "this post is for paid subscribers",
+    "this post is for paying subscribers",
+    "subscribe to keep reading",
+    "upgrade to paid",
+    "become a paying subscriber",
+    "this post is for subscribers",
+]
+
+
+def _looks_paywalled(text: str) -> bool:
+    lower = text.lower()
+    return any(marker in lower for marker in _PAYWALL_MARKERS)
+
+
 def fetch_post_content(pub_url: str, slug: str, cookie_header: str | None) -> dict:
     """Fetch a single post's full content. Requires a valid session cookie for paywalled posts."""
     subdomain = _subdomain(pub_url)
@@ -118,11 +137,12 @@ def fetch_post_content(pub_url: str, slug: str, cookie_header: str | None) -> di
     body_html = post.get("body_html") or ""
     text = BeautifulSoup(body_html, "html.parser").get_text("\n").strip()
 
-    if post.get("audience") == "only_paid" and cookie_header and len(text) < 200:
+    if cookie_header and (_looks_paywalled(text) or (post.get("audience") == "only_paid" and len(text) < 200)):
         raise SubstackAuthError(
-            "This is a paid post but the body came back nearly empty. Your session "
-            "cookie is probably expired or missing -- re-export it from your browser "
-            "(see README) and update the SUBSTACK_COOKIES_JSON secret."
+            f"'{post.get('title', slug)}' came back gated/truncated even with your "
+            "session cookie attached. Your cookie is probably expired -- re-export "
+            "substack.sid and substack.lli from your browser (see README) and update "
+            "the SUBSTACK_COOKIES secret."
         )
 
     return {
