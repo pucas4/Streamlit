@@ -1,4 +1,7 @@
 .streamlit/secrets.toml
+cookies.json
+*.db
+data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
